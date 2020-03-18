@@ -123,7 +123,7 @@ class SegReMapping:
 
 def stylization(stylization_module, smoothing_module, content_image_path, style_image_path, content_seg_path,
                 style_seg_path, output_image_path,
-                cuda, save_intermediate, no_post, label_remapping, output_visualization=False):
+                cuda, save_intermediate, no_post, label_remapping, output_visualization=False, device=0):
     # Load image
     with torch.no_grad():
         cont_img = Image.open(content_image_path).convert('RGB')
@@ -149,9 +149,9 @@ def stylization(stylization_module, smoothing_module, content_image_path, style_
         styl_img = transforms.ToTensor()(styl_img).unsqueeze(0)
 
         if cuda:
-            cont_img = cont_img.cuda(0)
-            styl_img = styl_img.cuda(0)
-            stylization_module.cuda(0)
+            cont_img = cont_img.cuda(device)
+            styl_img = styl_img.cuda(device)
+            stylization_module.cuda(device)
 
         # cont_img = Variable(cont_img, volatile=True)
         # styl_img = Variable(styl_img, volatile=True)

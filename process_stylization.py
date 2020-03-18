@@ -58,7 +58,7 @@ def memory_limit_image_resize(cont_img):
 
 
 def stylization(stylization_module, smoothing_module, content_image_path, style_image_path, content_seg_path, style_seg_path, output_image_path,
-                cuda, save_intermediate, no_post, cont_seg_remapping=None, styl_seg_remapping=None):
+                cuda, save_intermediate, no_post, cont_seg_remapping=None, styl_seg_remapping=None, device=0):
     # Load image
     with torch.no_grad():
         cont_img = Image.open(content_image_path).convert('RGB')
@@ -83,9 +83,9 @@ def stylization(stylization_module, smoothing_module, content_image_path, style_
         styl_img = transforms.ToTensor()(styl_img).unsqueeze(0)
 
         if cuda:
-            cont_img = cont_img.cuda(0)
-            styl_img = styl_img.cuda(0)
-            stylization_module.cuda(0)
+            cont_img = cont_img.cuda(device)
+            styl_img = styl_img.cuda(device)
+            stylization_module.cuda(device)
 
         # cont_img = Variable(cont_img, volatile=True)
         # styl_img = Variable(styl_img, volatile=True)
@@ -115,7 +115,7 @@ def stylization(stylization_module, smoothing_module, content_image_path, style_
 
             if no_post is False:
                 with Timer("Elapsed time in post processing: %f"):
-                    out_img = smooth_filter(output_image_path, content_image_path, f_radius=15, f_edge=1e-1)
+                    out_img = smooth_filter(output_image_path, content_image_path, f_radius=15, f_edge=1e-1, device=device)
             out_img.save(output_image_path)
         else:
             with Timer("Elapsed time in stylization: %f"):
@@ -132,6 +132,6 @@ def stylization(stylization_module, smoothing_module, content_image_path, style_
 
             if no_post is False:
                 with Timer("Elapsed time in post processing: %f"):
-                    out_img = smooth_filter(out_img, cont_pilimg, f_radius=15, f_edge=1e-1)
+                    out_img = smooth_filter(out_img, cont_pilimg, f_radius=15, f_edge=1e-1, device=device)
             out_img.save(output_image_path)
 

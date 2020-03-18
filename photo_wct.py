@@ -11,7 +11,7 @@ from models import VGGEncoder, VGGDecoder
 
 
 class PhotoWCT(nn.Module):
-    def __init__(self):
+    def __init__(self, device=0):
         super(PhotoWCT, self).__init__()
         self.e1 = VGGEncoder(1)
         self.d1 = VGGDecoder(1)
@@ -21,6 +21,7 @@ class PhotoWCT(nn.Module):
         self.d3 = VGGDecoder(3)
         self.e4 = VGGEncoder(4)
         self.d4 = VGGDecoder(4)
+        self.device = device
     
     def transform(self, cont_img, styl_img, cont_seg, styl_seg):
         self.__compute_label_info(cont_seg, styl_seg)
@@ -72,7 +73,7 @@ class PhotoWCT(nn.Module):
         styl_c, styl_h, styl_w = styl_feat.size(0), styl_feat.size(1), styl_feat.size(2)
         cont_feat_view = cont_feat.view(cont_c, -1).clone()
         styl_feat_view = styl_feat.view(styl_c, -1).clone()
-
+    
         if cont_seg.size == False or styl_seg.size == False:
             target_feature = self.__wct_core(cont_feat_view, styl_feat_view)
         else:
@@ -97,8 +98,8 @@ class PhotoWCT(nn.Module):
                 cont_indi = torch.LongTensor(cont_mask[0])
                 styl_indi = torch.LongTensor(styl_mask[0])
                 if self.is_cuda:
-                    cont_indi = cont_indi.cuda(0)
-                    styl_indi = styl_indi.cuda(0)
+                    cont_indi = cont_indi.cuda(self.device)
+                    styl_indi = styl_indi.cuda(self.device)
 
                 cFFG = torch.index_select(cont_feat_view, 1, cont_indi)
                 sFFG = torch.index_select(styl_feat_view, 1, styl_indi)
@@ -127,7 +128,7 @@ class PhotoWCT(nn.Module):
         
         iden = torch.eye(cFSize[0])  # .double()
         if self.is_cuda:
-            iden = iden.cuda()
+            iden = iden.cuda(self.device)
         
         contentConv = torch.mm(cont_feat, cont_feat.t()).div(cFSize[1] - 1) + iden
         # del iden

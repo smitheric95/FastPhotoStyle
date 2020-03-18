@@ -12,6 +12,7 @@ import process_stylization
 parser = argparse.ArgumentParser(description='Photorealistic Image Stylization')
 parser.add_argument('--model', default='./PhotoWCTModels/photo_wct.pth')
 parser.add_argument('--cuda', type=bool, default=True, help='Enable CUDA.')
+parser.add_argument('--device', type=int, default=0, help='CUDA device.')
 parser.add_argument('--save_intermediate', action='store_true', default=False)
 parser.add_argument('--fast', action='store_true', default=False)
 parser.add_argument('--no_post', action='store_true', default=False)
@@ -33,7 +34,7 @@ cont_img_list = [f for f in os.listdir(cont_img_folder) if os.path.isfile(os.pat
 cont_img_list.sort()
 
 # Load model
-p_wct = PhotoWCT()
+p_wct = PhotoWCT(device=args.device)
 p_wct.load_state_dict(torch.load(args.model))
 # Load Propagator
 if args.fast:
@@ -68,5 +69,6 @@ for f in cont_img_list:
         output_image_path=output_image_path,
         cuda=args.cuda,
         save_intermediate=args.save_intermediate,
-        no_post=args.no_post
+        no_post=args.no_post,
+        device=args.device
     )
