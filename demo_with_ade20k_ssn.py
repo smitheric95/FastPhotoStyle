@@ -44,6 +44,7 @@ parser.add_argument('--fast', action='store_true', default=False)
 parser.add_argument('--no_post', action='store_true', default=False)
 parser.add_argument('--output_visualization', action='store_true', default=False)
 parser.add_argument('--cuda', type=int, default=1, help='Enable CUDA.')
+parser.add_argument('--device', type=int, default=0, help='CUDA device.')
 parser.add_argument('--label_mapping', type=str, default='ade20k_semantic_rel.npy')
 args = parser.parse_args()
 
@@ -63,12 +64,12 @@ net_encoder = builder.build_encoder(arch=args.arch_encoder, fc_dim=args.fc_dim, 
 net_decoder = builder.build_decoder(arch=args.arch_decoder, fc_dim=args.fc_dim, num_class=args.num_class, weights=args.weights_decoder, use_softmax=True)
 crit = nn.NLLLoss(ignore_index=-1)
 segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
-segmentation_module.cuda()
+segmentation_module.cuda(args.device)
 segmentation_module.eval()
 transform = transforms.Compose([transforms.Normalize(mean=[102.9801, 115.9465, 122.7717], std=[1., 1., 1.])])
 
 # Load FastPhotoStyle model
-p_wct = PhotoWCT()
+p_wct = PhotoWCT(device=args.device)
 p_wct.load_state_dict(torch.load(args.model))
 if args.fast:
     from photo_gif import GIFSmoothing
@@ -77,7 +78,7 @@ else:
     from photo_smooth import Propagator
     p_pro = Propagator()
 if args.cuda:
-    p_wct.cuda(0)
+    p_wct.cuda(args.device)
 
 
 def segment_this_img(f):
@@ -104,7 +105,7 @@ def segment_this_img(f):
         pred = torch.zeros(1, args.num_class, segSize[0], segSize[1])
         for timg in img_resized_list:
             feed_dict = dict()
-            feed_dict['img_data'] = timg.cuda()
+            feed_dict['img_data'] = timg.cuda(args.device)
             feed_dict = async_copy_to(feed_dict, args.gpu_id)
             # forward pass
             pred_tmp = segmentation_module(feed_dict, segSize=segSize)
@@ -130,5 +131,6 @@ process_stylization_ade20k_ssn.stylization(
     save_intermediate=args.save_intermediate,
     no_post=args.no_post,
     label_remapping=segReMapping,
-    output_visualization=args.output_visualization
+    output_visualization=args.output_visualization,
+    device=args.device
 )

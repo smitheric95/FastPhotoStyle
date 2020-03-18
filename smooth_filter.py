@@ -329,7 +329,7 @@ from pynvrtc.compiler import Program
 from collections import namedtuple
 
 
-def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
+def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e, device=0):
     # program = Program(src.encode('utf-8'), 'best_local_affine_kernel.cu'.encode('utf-8'))
     # ptx = program.compile(['-I/usr/local/cuda/include'.encode('utf-8')])
     program = Program(src, 'best_local_affine_kernel.cu')
@@ -348,12 +348,12 @@ def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
     sigma2 = f_e
     radius = (patch - 1) / 2
 
-    filtered_best_output = torch.zeros(np.shape(input_cpu)).cuda()
-    affine_model =    torch.zeros((h * w, 12)).cuda()
-    filtered_affine_model =torch.zeros((h * w, 12)).cuda()
+    filtered_best_output = torch.zeros(np.shape(input_cpu)).cuda(device)
+    affine_model =    torch.zeros((h * w, 12)).cuda(device)
+    filtered_affine_model =torch.zeros((h * w, 12)).cuda(device)
 
-    input_ = torch.from_numpy(input_cpu).cuda()
-    output_ = torch.from_numpy(output_cpu).cuda()
+    input_ = torch.from_numpy(input_cpu).cuda(device)
+    output_ = torch.from_numpy(output_cpu).cuda(device)
     _best_local_affine_kernel(
         grid=(int((h * w) / 256 + 1), 1),
         block=(256, 1, 1),
@@ -377,7 +377,7 @@ def smooth_local_affine(output_cpu, input_cpu, epsilon, patch, h, w, f_r, f_e):
     return numpy_filtered_best_output
 
 
-def smooth_filter(initImg, contentImg, f_radius=15,f_edge=1e-1):
+def smooth_filter(initImg, contentImg, f_radius=15,f_edge=1e-1, device=0):
     '''
     :param initImg: intermediate output. Either image path or PIL Image
     :param contentImg: content image output. Either path or PIL Image
@@ -399,7 +399,7 @@ def smooth_filter(initImg, contentImg, f_radius=15,f_edge=1e-1):
     input_ = np.ascontiguousarray(content_input, dtype=np.float32) / 255.
     _, H, W = np.shape(input_)
     output_ = np.ascontiguousarray(best_image_bgr, dtype=np.float32) / 255.
-    best_ = smooth_local_affine(output_, input_, 1e-7, 3, H, W, f_radius, f_edge)
+    best_ = smooth_local_affine(output_, input_, 1e-7, 3, H, W, f_radius, f_edge, device=device)
     best_ = best_.transpose(1, 2, 0)
     result = Image.fromarray(np.uint8(np.clip(best_ * 255., 0, 255.)))
     return result

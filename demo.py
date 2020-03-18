@@ -19,10 +19,11 @@ parser.add_argument('--save_intermediate', action='store_true', default=False)
 parser.add_argument('--fast', action='store_true', default=False)
 parser.add_argument('--no_post', action='store_true', default=False)
 parser.add_argument('--cuda', type=int, default=1, help='Enable CUDA.')
+parser.add_argument('--device', type=int, default=0, help='CUDA device.')
 args = parser.parse_args()
 
 # Load model
-p_wct = PhotoWCT()
+p_wct = PhotoWCT(device=args.device)
 p_wct.load_state_dict(torch.load(args.model))
 
 if args.fast:
@@ -32,7 +33,7 @@ else:
     from photo_smooth import Propagator
     p_pro = Propagator()
 if args.cuda:
-    p_wct.cuda(0)
+    p_wct.cuda(args.device)
 
 process_stylization.stylization(
     stylization_module=p_wct,
@@ -44,5 +45,6 @@ process_stylization.stylization(
     output_image_path=args.output_image_path,
     cuda=args.cuda,
     save_intermediate=args.save_intermediate,
-    no_post=args.no_post
+    no_post=args.no_post,
+    device=args.device
 )
