@@ -131,10 +131,13 @@ class PhotoWCT(nn.Module):
             iden = iden.cuda(self.device)
         
         contentConv = torch.mm(cont_feat, cont_feat.t()).div(cFSize[1] - 1) + iden
+        
         # del iden
-        c_u, c_e, c_v = torch.svd(contentConv, some=False)
-        # c_e2, c_v = torch.eig(contentConv, True)
-        # c_e = c_e2[:,0]
+        try:
+            c_u, c_e, c_v = torch.svd(contentConv, some=False)
+        except RuntimeError:
+            c_e2, c_v = torch.eig(contentConv, True)
+            c_e = c_e2[:,0]
         
         k_c = cFSize[0]
         for i in range(cFSize[0] - 1, -1, -1):
