@@ -149,7 +149,12 @@ class PhotoWCT(nn.Module):
         s_mean = torch.mean(styl_feat, 1)
         styl_feat = styl_feat - s_mean.unsqueeze(1).expand_as(styl_feat)
         styleConv = torch.mm(styl_feat, styl_feat.t()).div(sFSize[1] - 1)
-        s_u, s_e, s_v = torch.svd(styleConv, some=False)
+
+        try:
+            s_u, s_e, s_v = torch.svd(styleConv, some=False)
+        except RuntimeError:
+            s_e2, s_v = torch.eig(styleConv, True)
+            s_e = s_e2[:,0]
         
         k_s = sFSize[0]
         for i in range(sFSize[0] - 1, -1, -1):
